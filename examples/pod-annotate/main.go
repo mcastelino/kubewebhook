@@ -28,6 +28,8 @@ func annotatePodMutator(_ context.Context, obj metav1.Object) (bool, error) {
 	}
 	pod.Annotations["mutated"] = "true"
 	pod.Annotations["mutator"] = "pod-annotate"
+	pod.Annotations["io.kubernetes.cri-o.TrustedSandbox"] = "false"
+	pod.Annotations["io.kubernetes.cri.untrusted-workload"] = "true"
 
 	return false, nil
 }
