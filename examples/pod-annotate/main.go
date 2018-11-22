@@ -22,6 +22,22 @@ func annotatePodMutator(_ context.Context, obj metav1.Object) (bool, error) {
 		return false, nil
 	}
 
+	//We cannot really support --net=host in Kata
+	if pod.Spec.HostNetwork {
+		fmt.Println("hostnetwork: ", pod.GetNamespace(), pod.GetName())
+		return false, nil
+	}
+
+	switch pod.GetNamespace() {
+	case "rook-ceph-system", "rook-ceph":
+		fmt.Println("rookie: ", pod.GetNamespace(), pod.GetName())
+		return false, nil
+	default:
+		break
+	}
+
+	fmt.Println("katait: ", pod.GetNamespace(), pod.GetName())
+
 	// Mutate our object with the required annotations.
 	if pod.Annotations == nil {
 		pod.Annotations = make(map[string]string)
