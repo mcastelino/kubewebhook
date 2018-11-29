@@ -22,12 +22,34 @@ func annotatePodMutator(_ context.Context, obj metav1.Object) (bool, error) {
 		return false, nil
 	}
 
-	// Mutate our object with the required annotations.
+	//We cannot really support --net=host in Kata
+	if pod.Spec.HostNetwork {
+		fmt.Println("hostnetwork: ", pod.GetNamespace(), pod.GetName())
+		return false, nil
+	}
+
+	//This should not happen as the webhook configuration prevents it
+	//but be paranoid
+	switch pod.GetNamespace() {
+	case "rook-ceph-system", "rook-ceph":
+		fmt.Println("rookie: ", pod.GetNamespace(), pod.GetName())
+		return false, nil
+	default:
+		break
+	}
+
+	//For kubernetes v1.12+
+	kataRuntimeClass := "kata"
+	pod.Spec.RuntimeClassName = &kataRuntimeClass
+
 	if pod.Annotations == nil {
 		pod.Annotations = make(map[string]string)
 	}
-	pod.Annotations["mutated"] = "true"
+
+	//Indicate we mutated
 	pod.Annotations["mutator"] = "pod-annotate"
+
+	//For older versions
 	pod.Annotations["io.kubernetes.cri-o.TrustedSandbox"] = "false"
 	pod.Annotations["io.kubernetes.cri.untrusted-workload"] = "true"
 
